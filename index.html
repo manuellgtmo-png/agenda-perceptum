@@ -106,20 +106,31 @@
             background: #E0F2FE; border-left: 4px solid var(--primary); padding: 6px;
             border-radius: 6px; font-size: 0.75rem; height: 100%; display: flex; flex-direction: column;
             justify-content: space-between; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            position: relative; z-index: 2;
         }
+        .slot-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px; }
         .slot-time { font-weight: bold; color: var(--dark); font-size: 0.7rem; }
         .slot-patient { font-weight: 700; color: #0F172A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .slot-service { color: #475569; font-size: 0.68rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .slot-actions { display: flex; gap: 6px; margin-top: 4px; }
+        .slot-actions { display: flex; gap: 4px; margin-top: 4px; }
         .btn-mini { border: none; background: rgba(255,255,255,0.8); padding: 2px 6px; border-radius: 4px; cursor: pointer; font-size: 0.7rem; color: #334155; text-decoration: none; }
-        .btn-mini:hover { background: white; color: var(--danger); }
+        .btn-mini:hover { background: white; color: var(--primary); }
+
+        /* Badges de Estado */
+        .status-badge {
+            font-size: 0.62rem; font-weight: bold; padding: 2px 6px; border-radius: 4px; text-transform: uppercase;
+        }
+        .status-Pendiente { background: #FEF3C7; color: #D97706; }
+        .status-Confirmado { background: #D1FAE5; color: #059669; }
+        .status-Reagendado { background: #E0E7FF; color: #4F46E5; }
+        .status-NoAsistio { background: #FEE2E2; color: #DC2626; }
 
         /* Modal */
         .modal {
             display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
             background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 9999;
         }
-        .modal-content { background: white; padding: 30px; border-radius: 12px; width: 90%; max-width: 500px; }
+        .modal-content { background: white; padding: 30px; border-radius: 12px; width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto; }
         .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; margin-bottom: 5px; font-weight: 600; color: #334155; font-size: 0.9rem; }
@@ -195,10 +206,12 @@
     <div class="modal" id="appointment-modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 style="margin: 0; color: var(--primary);"><i class="fas fa-calendar-plus"></i> Agendar Cita</h3>
+                <h3 id="modal-title" style="margin: 0; color: var(--primary);"><i class="fas fa-calendar-plus"></i> Agendar Cita</h3>
                 <i class="fas fa-times" style="cursor: pointer;" onclick="closeModal()"></i>
             </div>
             <form id="appointment-form" onsubmit="saveAppointment(event)">
+                <input type="hidden" id="editing-id" value="">
+                
                 <div class="form-group">
                     <label>Profesional Asignado *</label>
                     <select id="app-professional" required>
@@ -239,12 +252,23 @@
                     <div class="form-group" style="flex: 1;">
                         <label>Duración *</label>
                         <select id="duration" required>
-                            <option value="20">20 min</option>
-                            <option value="40" selected>40 min</option>
-                            <option value="60">60 min</option>
+                            <option value="20">20 min (1 cupo)</option>
+                            <option value="40" selected>40 min (2 cupos)</option>
+                            <option value="60">60 min (3 cupos)</option>
                         </select>
                     </div>
                 </div>
+                
+                <div class="form-group">
+                    <label>Estado de la Cita *</label>
+                    <select id="app-status" required>
+                        <option value="Pendiente">Pendiente</option>
+                        <option value="Confirmado">Confirmado</option>
+                        <option value="Reagendado">Reagendado</option>
+                        <option value="NoAsistio">No Asistió</option>
+                    </select>
+                </div>
+
                 <div class="form-group">
                     <label>Observaciones / Notas Clínicas</label>
                     <textarea id="observations" rows="2" placeholder="Motivo de consulta..."></textarea>
@@ -293,7 +317,32 @@
         }
 
         function openAppointmentModal() {
+            document.getElementById('editing-id').value = '';
+            document.getElementById('modal-title').innerHTML = `<i class="fas fa-calendar-plus"></i> Agendar Cita`;
+            document.getElementById('appointment-form').reset();
+            document.getElementById('app-professional').value = currentProfile;
             document.getElementById('app-date').value = document.getElementById('week-selector').value;
+            document.getElementById('app-status').value = 'Pendiente';
+            document.getElementById('appointment-modal').style.display = 'flex';
+        }
+
+        function editAppointment(id) {
+            const appointments = getAppointments();
+            const app = appointments.find(a => a.id === id);
+            if (!app) return;
+
+            document.getElementById('editing-id').value = app.id;
+            document.getElementById('modal-title').innerHTML = `<i class="fas fa-edit"></i> Editar Cita`;
+            document.getElementById('app-professional').value = app.professional;
+            document.getElementById('patient-name').value = app.name;
+            document.getElementById('patient-phone').value = app.phone;
+            document.getElementById('service-type').value = app.service;
+            document.getElementById('app-date').value = app.date;
+            document.getElementById('app-time').value = app.time;
+            document.getElementById('duration').value = app.duration;
+            document.getElementById('app-status').value = app.status || 'Pendiente';
+            document.getElementById('observations').value = app.notes || '';
+
             document.getElementById('appointment-modal').style.display = 'flex';
         }
 
@@ -307,20 +356,53 @@
 
         function saveAppointment(e) {
             e.preventDefault();
+            const editingId = document.getElementById('editing-id').value;
+            
             const newApp = {
-                id: Date.now(),
+                id: editingId ? Number(editingId) : Date.now(),
                 professional: document.getElementById('app-professional').value,
                 name: document.getElementById('patient-name').value,
                 phone: document.getElementById('patient-phone').value,
                 service: document.getElementById('service-type').value,
                 date: document.getElementById('app-date').value,
                 time: document.getElementById('app-time').value,
-                duration: document.getElementById('duration').value,
+                duration: parseInt(document.getElementById('duration').value),
+                status: document.getElementById('app-status').value,
                 notes: document.getElementById('observations').value
             };
 
-            const appointments = getAppointments();
-            appointments.push(newApp);
+            let appointments = getAppointments();
+
+            // Validar solapamiento de horarios (excluyendo la cita que estamos editando)
+            const slotsNecesarios = newApp.duration / 20;
+            const idxInicio = timeSlots.indexOf(newApp.time);
+            
+            if (idxInicio + slotsNecesarios > timeSlots.length) {
+                alert("La cita excede el horario de atención disponible.");
+                return;
+            }
+
+            for (let i = 0; i < slotsNecesarios; i++) {
+                const currentSlot = timeSlots[idxInicio + i];
+                const existeOcupacion = appointments.some(a => {
+                    if (a.id === newApp.id || a.professional !== newApp.professional || a.date !== newApp.date) return false;
+                    const aIdx = timeSlots.indexOf(a.time);
+                    const aSlots = a.duration / 20;
+                    return (idxInicio + i >= aIdx && idxInicio + i < aIdx + aSlots);
+                });
+
+                if (existeOcupacion) {
+                    alert(`El horario de las ${currentSlot} ya se encuentra ocupado por otra cita.`);
+                    return;
+                }
+            }
+
+            if (editingId) {
+                appointments = appointments.map(a => a.id === Number(editingId) ? newApp : a);
+            } else {
+                appointments.push(newApp);
+            }
+
             localStorage.setItem('perceptum_appointments', JSON.stringify(appointments));
 
             closeModal();
@@ -367,27 +449,54 @@
             let html = `<div class="grid-header time-col"><i class="far fa-clock"></i></div>`;
             weekDays.forEach(wd => { html += `<div class="grid-header">${wd.label}</div>`; });
 
-            timeSlots.forEach(slot => {
+            // Matriz para controlar celdas ocupadas por citas multiclopo (grid-span)
+            const occupied = {};
+
+            timeSlots.forEach((slot, slotIdx) => {
                 html += `<div class="time-slot-label">${slot}</div>`;
+                
                 weekDays.forEach(wd => {
+                    const key = `${wd.dateStr}_${slot}`;
+                    
+                    if (occupied[key]) {
+                        // Omitir renderizado de la celda porque está abarcada por un row-span superior
+                        return;
+                    }
+
                     const app = appointments.find(a => a.date === wd.dateStr && a.time === slot);
-                    html += `<div class="grid-cell">`;
-                    if(app) {
-                        html += `
+
+                    if (app) {
+                        const slotsSpan = (app.duration || 20) / 20;
+                        
+                        // Marcar los siguientes bloques como ocupados
+                        for (let i = 0; i < slotsSpan; i++) {
+                            const nextSlot = timeSlots[slotIdx + i];
+                            if (nextSlot) occupied[`${wd.dateStr}_${nextSlot}`] = true;
+                        }
+
+                        const statusText = app.status || 'Pendiente';
+                        const statusLabel = statusText === 'NoAsistio' ? 'No Asistió' : statusText;
+
+                        html += `<div class="grid-cell" style="grid-row: span ${slotsSpan};">
                             <div class="slot-card">
                                 <div>
-                                    <div class="slot-time"><i class="far fa-clock"></i> ${app.time} (${app.duration}m)</div>
+                                    <div class="slot-header">
+                                        <span class="slot-time"><i class="far fa-clock"></i> ${app.time} (${app.duration}m)</span>
+                                        <span class="status-badge status-${statusText}">${statusLabel}</span>
+                                    </div>
                                     <div class="slot-patient">${app.name}</div>
                                     <div class="slot-service">${app.service}</div>
                                 </div>
                                 <div class="slot-actions">
+                                    <button class="btn-mini" onclick="editAppointment(${app.id})" title="Editar Cita"><i class="fas fa-pen" style="color:var(--primary);"></i></button>
                                     <a class="btn-mini" href="https://wa.me/${app.phone.replace(/[^0-9]/g, '')}" target="_blank" title="WhatsApp"><i class="fab fa-whatsapp" style="color:#25D366;"></i></a>
                                     <button class="btn-mini" onclick="deleteAppointment(${app.id})" title="Eliminar"><i class="fas fa-trash" style="color:var(--danger);"></i></button>
                                 </div>
                             </div>
-                        `;
+                        </div>`;
+                    } else {
+                        html += `<div class="grid-cell"></div>`;
                     }
-                    html += `</div>`;
                 });
             });
 
