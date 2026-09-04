@@ -34,8 +34,25 @@
             box-shadow: 0 20px 40px rgba(0,0,0,0.6); width: 90%; max-width: 400px; border: 1px solid var(--border);
         }
         
-        .login-logo { width: 110px; height: auto; margin-bottom: 15px; object-fit: contain; }
-        .brand-logo { max-width: 180px; max-height: 70px; height: auto; object-fit: contain; }
+        /* Ajuste circular perfecto para el logo */
+        .login-logo { 
+            width: 120px; 
+            height: 120px; 
+            margin: 0 auto 15px auto; 
+            object-fit: cover; 
+            border-radius: 50%; 
+            display: block;
+            border: 2px solid var(--primary);
+        }
+        .brand-logo { 
+            width: 100px; 
+            height: 100px; 
+            object-fit: cover; 
+            border-radius: 50%; 
+            border: 2px solid var(--primary);
+            margin: 0 auto;
+            display: block;
+        }
 
         .login-box input {
             width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid var(--border);
@@ -170,7 +187,7 @@
     <!-- Login -->
     <div id="login-overlay">
         <div class="login-box">
-            <img src="logo-perceptum.png" alt="Perceptum Logo" class="login-logo">
+            <img src="logo-perceptum.png.jpg" alt="Perceptum Logo" class="login-logo">
             <h2 style="color: var(--primary); margin: 0 0 5px 0;">PERCEPTUM</h2>
             <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 20px;">Centro de Salud Especializada</p>
             <input type="password" id="access-code" placeholder="Ingrese su contraseña">
@@ -186,7 +203,7 @@
         <aside class="sidebar" id="sidebar">
             <div>
                 <div class="brand-container">
-                    <img src="logo-perceptum.png" alt="Perceptum Logo" class="brand-logo">
+                    <img src="logo-perceptum.png.jpg" alt="Perceptum Logo" class="brand-logo">
                 </div>
 
                 <div class="profile-selector">
@@ -303,10 +320,10 @@
     <script>
         const DEFAULT_PASS = "Perceptum2026";
         
-        // --- CONFIGURACIÓN DE SINCRONIZACIÓN CONFIGURADA ---
+        // --- CONFIGURACIÓN DE SINCRONIZACIÓN ---
         const JSONBIN_BIN_ID = "6a9a5075da38895dfe36e52f"; 
         const JSONBIN_API_KEY = "$2a$10$f.n56cI8As3TIWkGah7ZZ.DzNTsWgX8/RpWig2WafjRwlxzvpmh9e"; 
-        // --------------------------------------------------
+        // --------------------------------------
 
         let currentProfile = "Manu";
         let appointmentsList = JSON.parse(localStorage.getItem('perceptum_appointments')) || [];
@@ -348,7 +365,6 @@
                 if (response.ok) {
                     const data = await response.json();
                     if (Array.isArray(data.record)) {
-                        // Si hay datos locales previos y la nube está vacía o tiene el test inicial, subir local
                         if (appointmentsList.length > 0 && (data.record.length === 0 || (data.record.length === 1 && data.record[0].status === "test"))) {
                             syncToCloud();
                         } else {
