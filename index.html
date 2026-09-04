@@ -5,10 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Agenda Médica Privada | Perceptum</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    
-    <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
     <style>
         :root {
@@ -299,23 +295,11 @@
     </div>
 
     <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyCSRp9itPy2cj55HvyuH6A8KXGypW1rbUY",
-            authDomain: "agenda-perceptum.firebaseapp.com",
-            databaseURL: "https://agenda-perceptum-default-rtdb.firebaseio.com",
-            projectId: "agenda-perceptum",
-            storageBucket: "agenda-perceptum.firebasestorage.app",
-            messagingSenderId: "918720520188",
-            appId: "1:918720520188:web:0933a7afcf8623fdd79c79",
-            measurementId: "G-F0W2GBSMLW"
-        };
-
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
-
         const DEFAULT_PASS = "Perceptum2026";
         let currentProfile = "Manu";
-        let appointmentsList = [];
+        
+        // Carga de citas desde almacenamiento local libre de dependencias
+        let appointmentsList = JSON.parse(localStorage.getItem('perceptum_appointments')) || [];
         
         const timeSlots = [];
         let h = 9, m = 0;
@@ -332,31 +316,13 @@
             return `${year}-${month}-${day}`;
         }
 
-        function normalizeDateStr(dateVal) {
-            if (!dateVal) return formatDate(new Date());
-            let clean = dateVal.trim();
-            if (clean.includes('/')) clean = clean.replace(/\//g, '-');
-            const parts = clean.split('-');
-            if (parts.length === 3) {
-                if (parts[0].length === 4) {
-                    return `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
-                } else if (parts[2].length === 4) {
-                    return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
-                }
-            }
-            return clean;
-        }
-
         document.getElementById('week-selector').value = formatDate(new Date());
         populateTimeSelect();
+        renderWeeklyGrid();
 
-        db.ref('appointments').on('value', (snapshot) => {
-            const data = snapshot.val();
-            appointmentsList = data ? Object.values(data) : [];
-            renderWeeklyGrid();
-        }, (error) => {
-            alert("Error de sincronización con Firebase: " + error.message);
-        });
+        function saveToStorage() {
+            localStorage.setItem('perceptum_appointments', JSON.stringify(appointmentsList));
+        }
 
         function toggleSidebar() {
             document.getElementById('sidebar').classList.toggle('active');
@@ -411,7 +377,7 @@
             document.getElementById('patient-name').value = app.name;
             document.getElementById('patient-phone').value = app.phone;
             document.getElementById('service-type').value = app.service;
-            document.getElementById('app-date').value = normalizeDateStr(app.date);
+            document.getElementById('app-date').value = app.date;
             document.getElementById('app-time').value = app.time;
             document.getElementById('duration').value = app.duration;
             document.getElementById('app-status').value = app.status || 'Pendiente';
@@ -429,8 +395,6 @@
             
             const editingId = document.getElementById('editing-id').value;
             const appUniqueId = editingId ? Number(editingId) : Date.now();
-            const rawDate = document.getElementById('app-date').value;
-            const cleanDate = normalizeDateStr(rawDate);
 
             const newApp = {
                 id: appUniqueId,
@@ -438,7 +402,7 @@
                 name: document.getElementById('patient-name').value,
                 phone: document.getElementById('patient-phone').value,
                 service: document.getElementById('service-type').value,
-                date: cleanDate,
+                date: document.getElementById('app-date').value,
                 time: document.getElementById('app-time').value,
                 duration: parseInt(document.getElementById('duration').value),
                 status: document.getElementById('app-status').value,
@@ -449,14 +413,14 @@
             const idxInicio = timeSlots.indexOf(newApp.time);
             
             if (idxInicio === -1 || idxInicio + slotsNecesarios > timeSlots.length) {
-                alert("La cita excede el horario de atención disponible.");
+                alert("La cita excede el horario disponible.");
                 return;
             }
 
             for (let i = 0; i < slotsNecesarios; i++) {
                 const currentSlot = timeSlots[idxInicio + i];
                 const existeOcupacion = appointmentsList.some(a => {
-                    if (a.id === newApp.id || a.professional !== newApp.professional || normalizeDateStr(a.date) !== cleanDate) return false;
+                    if (a.id === newApp.id || a.professional !== newApp.professional || a.date !== newApp.date) return false;
                     const aIdx = timeSlots.indexOf(a.time);
                     const aSlots = a.duration / 20;
                     return (idxInicio + i >= aIdx && idxInicio + i < aIdx + aSlots);
@@ -468,26 +432,32 @@
                 }
             }
 
-            db.ref('appointments/' + appUniqueId).set(newApp, (error) => {
-                if (error) {
-                    alert("Error al guardar en Firebase: " + error.message);
-                } else {
-                    closeModal();
-                    document.getElementById('appointment-form').reset();
-                }
-            });
+            if (editingId) {
+                const idx = appointmentsList.findIndex(a => a.id === appUniqueId);
+                if (idx !== -1) appointmentsList[idx] = newApp;
+            } else {
+                appointmentsList.push(newApp);
+            }
+
+            saveToStorage();
+            closeModal();
+            renderWeeklyGrid();
         }
 
         function deleteAppointment(id) {
             if(confirm("¿Seguro que deseas eliminar esta cita?")) {
-                db.ref('appointments/' + id).remove();
+                appointmentsList = appointmentsList.filter(a => a.id !== id);
+                saveToStorage();
+                renderWeeklyGrid();
             }
         }
 
         function parseLocalDate(dateVal) {
-            const clean = normalizeDateStr(dateVal);
-            const parts = clean.split('-');
-            return new Date(parts[0], parts[1] - 1, parts[2]);
+            if (typeof dateVal === 'string' && dateVal.includes('-')) {
+                const parts = dateVal.split('-');
+                return new Date(parts[0], parts[1] - 1, parts[2]);
+            }
+            return new Date(dateVal);
         }
 
         function getMonday(d) {
@@ -527,7 +497,7 @@
                     const key = `${wd.dateStr}_${slot}`;
                     if (occupied[key]) return;
 
-                    const app = filteredApps.find(a => normalizeDateStr(a.date) === wd.dateStr && a.time === slot);
+                    const app = filteredApps.find(a => a.date === wd.dateStr && a.time === slot);
 
                     if (app) {
                         const slotsSpan = (app.duration || 20) / 20;
