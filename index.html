@@ -105,6 +105,11 @@
             border-radius: 8px; font-weight: 600; color: var(--text-main); cursor: pointer; font-size: 0.85rem; color-scheme: dark;
         }
 
+        .sync-badge {
+            font-size: 0.75rem; padding: 4px 8px; border-radius: 6px; background: #334155; color: var(--text-muted);
+            display: flex; align-items: center; gap: 5px;
+        }
+
         /* Calendar Grid */
         .calendar-wrapper { flex: 1; overflow-y: auto; overflow-x: auto; padding: 15px; }
         
@@ -206,6 +211,7 @@
                     <h1 id="agenda-title"><i class="fas fa-calendar-alt" style="color: var(--primary);"></i> Agenda - Manu</h1>
                 </div>
                 <div class="header-controls">
+                    <span class="sync-badge" id="sync-status"><i class="fas fa-sync fa-spin"></i> Conectando...</span>
                     <input type="date" id="week-selector" class="week-picker-btn" onchange="renderWeeklyGrid()">
                 </div>
             </div>
@@ -296,9 +302,13 @@
 
     <script>
         const DEFAULT_PASS = "Perceptum2026";
-        let currentProfile = "Manu";
         
-        // Carga de citas desde almacenamiento local libre de dependencias
+        // --- CONFIGURACIÓN DE SINCRONIZACIÓN CONFIGURADA ---
+        const JSONBIN_BIN_ID = "6a9a5075da38895dfe36e52f"; 
+        const JSONBIN_API_KEY = "$2a$10$f.n56cI8As3TIWkGah7ZZ.DzNTsWgX8/RpWig2WafjRwlxzvpmh9e"; 
+        // --------------------------------------------------
+
+        let currentProfile = "Manu";
         let appointmentsList = JSON.parse(localStorage.getItem('perceptum_appointments')) || [];
         
         const timeSlots = [];
@@ -318,10 +328,73 @@
 
         document.getElementById('week-selector').value = formatDate(new Date());
         populateTimeSelect();
-        renderWeeklyGrid();
+        
+        // Cargar citas desde la nube al iniciar
+        loadCloudData();
+        // Sincronizar automáticamente cada 20 segundos
+        setInterval(loadCloudData, 20000);
 
-        function saveToStorage() {
+        async function loadCloudData() {
+            if(!JSONBIN_BIN_ID || JSONBIN_BIN_ID === "AQUI_TU_BIN_ID") {
+                updateSyncStatus("Local (Sin Nube)", "#94A3B8");
+                renderWeeklyGrid();
+                return;
+            }
+
+            try {
+                const response = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, {
+                    headers: { 'X-Master-Key': JSONBIN_API_KEY }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    if (Array.isArray(data.record)) {
+                        // Si hay datos locales previos y la nube está vacía o tiene el test inicial, subir local
+                        if (appointmentsList.length > 0 && (data.record.length === 0 || (data.record.length === 1 && data.record[0].status === "test"))) {
+                            syncToCloud();
+                        } else {
+                            appointmentsList = data.record;
+                            localStorage.setItem('perceptum_appointments', JSON.stringify(appointmentsList));
+                        }
+                        updateSyncStatus("Sincronizado", "#10B981");
+                        renderWeeklyGrid();
+                    }
+                } else {
+                    updateSyncStatus("Error Sinc.", "#E63946");
+                }
+            } catch (e) {
+                updateSyncStatus("Modo Offline", "#F59E0B");
+            }
+        }
+
+        async function syncToCloud() {
             localStorage.setItem('perceptum_appointments', JSON.stringify(appointmentsList));
+            
+            if(!JSONBIN_BIN_ID || JSONBIN_BIN_ID === "AQUI_TU_BIN_ID") return;
+
+            updateSyncStatus("Guardando...", "#3B82F6");
+            try {
+                const response = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Master-Key': JSONBIN_API_KEY
+                    },
+                    body: JSON.stringify(appointmentsList)
+                });
+                if (response.ok) {
+                    updateSyncStatus("Sincronizado", "#10B981");
+                } else {
+                    updateSyncStatus("Error al Guardar", "#E63946");
+                }
+            } catch (e) {
+                updateSyncStatus("Guardado Local", "#F59E0B");
+            }
+        }
+
+        function updateSyncStatus(text, color) {
+            const badge = document.getElementById('sync-status');
+            badge.style.color = color;
+            badge.innerHTML = `<i class="fas fa-cloud"></i> ${text}`;
         }
 
         function toggleSidebar() {
@@ -439,16 +512,16 @@
                 appointmentsList.push(newApp);
             }
 
-            saveToStorage();
             closeModal();
             renderWeeklyGrid();
+            syncToCloud();
         }
 
         function deleteAppointment(id) {
             if(confirm("¿Seguro que deseas eliminar esta cita?")) {
                 appointmentsList = appointmentsList.filter(a => a.id !== id);
-                saveToStorage();
                 renderWeeklyGrid();
+                syncToCloud();
             }
         }
 
