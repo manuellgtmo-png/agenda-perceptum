@@ -35,24 +35,32 @@
         }
         
         /* Ajuste circular perfecto para el logo */
-        .login-logo { 
-            width: 120px; 
-            height: 120px; 
-            margin: 0 auto 15px auto; 
-            object-fit: cover; 
-            border-radius: 50%; 
-            display: block;
-            border: 2px solid var(--primary);
-        }
-        .brand-logo { 
-            width: 100px; 
-            height: 100px; 
-            object-fit: cover; 
-            border-radius: 50%; 
-            border: 2px solid var(--primary);
-            margin: 0 auto;
-            display: block;
-        }
+        /* Ajuste preciso con zoom al centro del logo */
+.login-logo { 
+    width: 140px; 
+    height: 140px; 
+    margin: 0 auto 15px auto; 
+    object-fit: cover; 
+    object-position: center;
+    transform: scale(1.85); /* Hace zoom para eliminar el exceso de margen blanco */
+    border-radius: 50%; 
+    display: block;
+    border: 2px solid var(--primary);
+    overflow: hidden;
+}
+
+.brand-logo { 
+    width: 100px; 
+    height: 100px; 
+    object-fit: cover; 
+    object-position: center;
+    transform: scale(1.85); /* Zoom para el menú lateral */
+    border-radius: 50%; 
+    border: 2px solid var(--primary);
+    margin: 15px auto;
+    display: block;
+    overflow: hidden;
+}
 
         .login-box input {
             width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid var(--border);
