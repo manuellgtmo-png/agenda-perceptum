@@ -34,31 +34,32 @@
             box-shadow: 0 20px 40px rgba(0,0,0,0.6); width: 90%; max-width: 400px; border: 1px solid var(--border);
         }
         
-        /* Contenedor circular externo para el Logo */
+      /* Contenedor circular más amplio */
         .login-logo-container {
-            width: 130px;
-            height: 130px;
+            width: 170px;
+            height: 170px;
             margin: 0 auto 15px auto;
             border-radius: 50%;
             overflow: hidden;
-            border: 2px solid var(--primary);
+            border: 3px solid var(--primary);
             display: flex;
             justify-content: center;
             align-items: center;
-            background: #ffffff;
+            background: transparent;
         }
 
-        /* Imagen con zoom potente para quitar marco blanco */
+        /* Zoom ajustado para llenar el contenedor */
         .login-logo-container img {
             width: 100%;
             height: 100%;
             object-fit: cover;
-            transform: scale(2.7);
+            transform: scale(2.05);
         }
 
+        /* Ajuste proporcional para el Sidebar */
         .brand-logo-container {
-            width: 90px;
-            height: 90px;
+            width: 110px;
+            height: 110px;
             margin: 10px auto;
             border-radius: 50%;
             overflow: hidden;
@@ -66,15 +67,15 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            background: #ffffff;
+            background: transparent;
         }
 
         .brand-logo-container img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transform: scale(2.7);
-        }
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform: scale(2.05);
+}
 
         .login-box input {
             width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid var(--border);
