@@ -291,11 +291,11 @@
             if (m >= 60) { m = 0; h++; }
         }
 
-        document.getElementById('week-selector').valueAsDate = new Date();
+        document.getElementById('week-selector').value = formatDate(new Date());
         populateTimeSelect();
 
         function populateTimeSelect() {
-            document.getElementById('app-time').innerHTML = timeSlots.map(t => `<option value="${t}">${t} hrs</option>`).join('');
+            document.getElementById('app-time').innerHTML = timeSlots.map(t => `<option value="${t}">${t}</option>`).join('');
         }
 
         function checkAccess() {
@@ -373,7 +373,7 @@
 
             let appointments = getAppointments();
 
-            // Validar solapamiento de horarios (excluyendo la cita que estamos editando)
+            // Validar solapamiento de horarios (excluyendo la cita que se está editando)
             const slotsNecesarios = newApp.duration / 20;
             const idxInicio = timeSlots.indexOf(newApp.time);
             
@@ -418,25 +418,44 @@
             }
         }
 
+        // Obtener la fecha en hora local
+        function parseLocalDate(dateVal) {
+            if (typeof dateVal === 'string' && dateVal.includes('-')) {
+                const parts = dateVal.split('-');
+                return new Date(parts[0], parts[1] - 1, parts[2]);
+            }
+            return new Date(dateVal);
+        }
+
+        // Calcula el lunes de la semana actual sea cual sea el día seleccionado
         function getMonday(d) {
-            d = new Date(d);
-            let day = d.getDay(), diff = d.getDate() - day + (day === 0 ? -6 : 1);
-            return new Date(d.setDate(diff));
+            d = parseLocalDate(d);
+            let day = d.getDay();
+            // Ajustar para que el Lunes sea 1 y Domingo sea 7
+            let diff = d.getDate() - day + (day === 0 ? -6 : 1); 
+            
+            const monday = new Date(d.getFullYear(), d.getMonth(), diff);
+            return monday;
         }
 
         function formatDate(d) {
-            return d.toISOString().split('T')[0];
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
         }
 
         function renderWeeklyGrid() {
             const container = document.getElementById('grid-container');
-            const monday = getMonday(new Date(document.getElementById('week-selector').value));
+            const selectedValue = document.getElementById('week-selector').value;
+            
+            // Calculamos siempre el lunes de la semana de la fecha elegida
+            const monday = getMonday(selectedValue);
 
             const weekDays = [];
             const dayNames = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
             for(let i = 0; i < 6; i++) {
-                let day = new Date(monday);
-                day.setDate(monday.getDate() + i);
+                let day = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + i);
                 weekDays.push({
                     name: dayNames[i],
                     dateStr: formatDate(day),
@@ -449,7 +468,7 @@
             let html = `<div class="grid-header time-col"><i class="far fa-clock"></i></div>`;
             weekDays.forEach(wd => { html += `<div class="grid-header">${wd.label}</div>`; });
 
-            // Matriz para controlar celdas ocupadas por citas multiclopo (grid-span)
+            // Matriz para controlar celdas ocupadas por citas de múltiples bloques
             const occupied = {};
 
             timeSlots.forEach((slot, slotIdx) => {
@@ -459,7 +478,6 @@
                     const key = `${wd.dateStr}_${slot}`;
                     
                     if (occupied[key]) {
-                        // Omitir renderizado de la celda porque está abarcada por un row-span superior
                         return;
                     }
 
@@ -468,7 +486,6 @@
                     if (app) {
                         const slotsSpan = (app.duration || 20) / 20;
                         
-                        // Marcar los siguientes bloques como ocupados
                         for (let i = 0; i < slotsSpan; i++) {
                             const nextSlot = timeSlots[slotIdx + i];
                             if (nextSlot) occupied[`${wd.dateStr}_${nextSlot}`] = true;
