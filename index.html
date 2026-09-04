@@ -12,36 +12,38 @@
 
     <style>
         :root {
-            --primary: #005f73;
-            --secondary: #0A9396;
-            --accent: #E9D8A6;
-            --danger: #CA6702;
-            --dark: #1D2D44;
-            --bg: #F8FAFC;
-            --card-bg: #FFFFFF;
-            --border: #E2E8F0;
+            --primary: #00B4D8;
+            --secondary: #0077B6;
+            --accent: #90E0EF;
+            --danger: #E63946;
+            --dark-bg: #0F172A;
+            --card-bg: #1E293B;
+            --input-bg: #334155;
+            --text-main: #F8FAFC;
+            --text-muted: #94A3B8;
+            --border: #334155;
         }
 
         * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { margin: 0; background-color: var(--bg); height: 100vh; overflow: hidden; }
+        body { margin: 0; background-color: var(--dark-bg); color: var(--text-main); height: 100vh; overflow: hidden; }
 
         /* Login Overlay */
         #login-overlay {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(0, 95, 115, 0.95);
+            background: rgba(15, 23, 42, 0.98);
             display: flex; justify-content: center; align-items: center; z-index: 10000;
         }
         .login-box {
-            background: white; padding: 40px; border-radius: 16px; text-align: center;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.3); width: 90%; max-width: 400px;
+            background: var(--card-bg); padding: 40px; border-radius: 16px; text-align: center;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6); width: 90%; max-width: 400px; border: 1px solid var(--border);
         }
         
         .login-logo { width: 110px; height: auto; margin-bottom: 15px; object-fit: contain; }
         .brand-logo { max-width: 180px; max-height: 70px; height: auto; object-fit: contain; }
 
         .login-box input {
-            width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ccc;
-            border-radius: 8px; font-size: 1rem; text-align: center;
+            width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid var(--border);
+            border-radius: 8px; font-size: 1rem; text-align: center; background: var(--input-bg); color: white;
         }
         .login-box button {
             width: 100%; padding: 12px; background: var(--secondary); color: white;
@@ -53,15 +55,15 @@
 
         .sidebar-overlay {
             display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(0,0,0,0.5); z-index: 998;
+            background: rgba(0,0,0,0.7); z-index: 998;
         }
 
-        /* Sidebar deslizable siempre (PC y Móvil) */
+        /* Sidebar deslizable */
         .sidebar {
             position: fixed; top: 0; left: 0; height: 100vh; width: 280px;
-            background: var(--dark); color: white; padding: 25px 20px;
+            background: #020617; color: white; padding: 25px 20px;
             display: flex; flex-direction: column; justify-content: space-between;
-            transition: transform 0.3s ease; z-index: 999;
+            transition: transform 0.3s ease; z-index: 999; border-right: 1px solid var(--border);
             transform: translateX(-100%);
         }
         .sidebar.active { transform: translateX(0); }
@@ -70,12 +72,12 @@
         .brand-container { text-align: center; margin-bottom: 25px; }
 
         .profile-selector {
-            background: rgba(255, 255, 255, 0.08); padding: 12px; border-radius: 10px; margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0.05); padding: 12px; border-radius: 10px; margin-bottom: 20px; border: 1px solid var(--border);
         }
-        .profile-selector label { font-size: 0.8rem; color: #94A3B8; display: block; margin-bottom: 8px; }
+        .profile-selector label { font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 8px; }
         .profile-buttons { display: flex; gap: 8px; }
         .btn-profile {
-            flex: 1; padding: 8px; border: 1px solid rgba(255,255,255,0.2); background: transparent;
+            flex: 1; padding: 8px; border: 1px solid var(--border); background: transparent;
             color: white; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.85rem; transition: all 0.2s;
         }
         .btn-profile.active { background: var(--secondary); border-color: var(--secondary); }
@@ -85,27 +87,26 @@
             border-radius: 8px; font-weight: bold; cursor: pointer; display: flex;
             align-items: center; justify-content: center; gap: 10px; width: 100%; font-size: 0.95rem; transition: background 0.2s;
         }
-        .btn-new:hover { background: #087f82; }
+        .btn-new:hover { background: #005f96; }
 
         /* Main Content */
-        .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; width: 100%; }
+        .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; width: 100%; background: var(--dark-bg); }
         
         .header {
-            padding: 15px 20px; background: white; border-bottom: 1px solid var(--border);
+            padding: 15px 20px; background: var(--card-bg); border-bottom: 1px solid var(--border);
             display: flex; justify-content: space-between; align-items: center; gap: 10px;
         }
         .header-title-container { display: flex; align-items: center; gap: 12px; }
         
-        /* Botón Hamburguesa visible universalmente en PC y Móvil */
         .menu-toggle {
-            display: block; background: #F1F5F9; border: 1px solid var(--border);
-            padding: 8px 12px; border-radius: 8px; font-size: 1.2rem; color: var(--dark); cursor: pointer;
+            display: block; background: var(--input-bg); border: 1px solid var(--border);
+            padding: 8px 12px; border-radius: 8px; font-size: 1.2rem; color: var(--text-main); cursor: pointer;
         }
-        .header h1 { margin: 0; color: var(--dark); font-size: 1.2rem; display: flex; align-items: center; gap: 8px; }
+        .header h1 { margin: 0; color: var(--text-main); font-size: 1.2rem; display: flex; align-items: center; gap: 8px; }
         .header-controls { display: flex; align-items: center; gap: 10px; }
         .week-picker-btn {
-            background: #F1F5F9; border: 1px solid var(--border); padding: 8px 10px;
-            border-radius: 8px; font-weight: 600; color: var(--dark); cursor: pointer; font-size: 0.85rem;
+            background: var(--input-bg); border: 1px solid var(--border); padding: 8px 10px;
+            border-radius: 8px; font-weight: 600; color: var(--text-main); cursor: pointer; font-size: 0.85rem; color-scheme: dark;
         }
 
         /* Calendar Grid */
@@ -117,48 +118,49 @@
             min-width: 800px;
         }
 
-        .grid-header { background: #F1F5F9; padding: 12px 8px; text-align: center; font-weight: 700; color: var(--dark); font-size: 0.85rem; }
-        .grid-header.time-col { background: #E2E8F0; color: #64748B; font-size: 0.75rem; display: flex; align-items: center; justify-content: center; }
+        .grid-header { background: #1E293B; padding: 12px 8px; text-align: center; font-weight: 700; color: var(--text-main); font-size: 0.85rem; }
+        .grid-header.time-col { background: #0F172A; color: var(--text-muted); font-size: 0.75rem; display: flex; align-items: center; justify-content: center; }
 
         .time-slot-label {
-            background: white; padding: 10px 4px; text-align: center; font-size: 0.75rem;
-            color: #64748B; font-weight: 600; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: center;
+            background: var(--card-bg); padding: 10px 4px; text-align: center; font-size: 0.75rem;
+            color: var(--text-muted); font-weight: 600; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: center;
         }
 
-        .grid-cell { background: white; border-top: 1px solid var(--border); min-height: 48px; position: relative; padding: 2px; }
-        .grid-cell:hover { background: #F8FAFC; }
+        .grid-cell { background: #0F172A; border-top: 1px solid var(--border); min-height: 48px; position: relative; padding: 2px; }
+        .grid-cell:hover { background: #1E293B; }
 
         .slot-card {
-            background: #E0F2FE; border-left: 4px solid var(--primary); padding: 6px;
+            background: #1E293B; border-left: 4px solid var(--primary); padding: 6px;
             border-radius: 6px; font-size: 0.75rem; height: 100%; display: flex; flex-direction: column;
-            justify-content: space-between; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-            position: relative; z-index: 2;
+            justify-content: space-between; box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            position: relative; z-index: 2; border: 1px solid var(--border);
         }
         .slot-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px; }
-        .slot-time { font-weight: bold; color: var(--dark); font-size: 0.7rem; }
-        .slot-patient { font-weight: 700; color: #0F172A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .slot-service { color: #475569; font-size: 0.68rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .slot-time { font-weight: bold; color: var(--primary); font-size: 0.7rem; }
+        .slot-patient { font-weight: 700; color: #FFFFFF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .slot-service { color: var(--text-muted); font-size: 0.68rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .slot-actions { display: flex; gap: 4px; margin-top: 4px; }
-        .btn-mini { border: none; background: rgba(255,255,255,0.8); padding: 2px 6px; border-radius: 4px; cursor: pointer; font-size: 0.7rem; color: #334155; text-decoration: none; }
-        .btn-mini:hover { background: white; color: var(--primary); }
+        .btn-mini { border: none; background: var(--input-bg); padding: 2px 6px; border-radius: 4px; cursor: pointer; font-size: 0.7rem; color: white; text-decoration: none; }
+        .btn-mini:hover { background: var(--border); color: var(--primary); }
 
         .status-badge { font-size: 0.62rem; font-weight: bold; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; }
-        .status-Pendiente { background: #FEF3C7; color: #D97706; }
-        .status-Confirmado { background: #D1FAE5; color: #059669; }
-        .status-Reagendado { background: #E0E7FF; color: #4F46E5; }
-        .status-NoAsistio { background: #FEE2E2; color: #DC2626; }
+        .status-Pendiente { background: #78350F; color: #FDE68A; }
+        .status-Confirmado { background: #064E3B; color: #A7F3D0; }
+        .status-Reagendado { background: #312E81; color: #C7D2FE; }
+        .status-NoAsistio { background: #7F1D1D; color: #FECACA; }
 
-        /* Modal */
+        /* Modal Oscuro */
         .modal {
             display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 9999;
+            background: rgba(0,0,0,0.8); justify-content: center; align-items: center; z-index: 9999;
         }
-        .modal-content { background: white; padding: 25px; border-radius: 12px; width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto; }
+        .modal-content { background: var(--card-bg); color: var(--text-main); padding: 25px; border-radius: 12px; width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto; border: 1px solid var(--border); }
         .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; margin-bottom: 5px; font-weight: 600; color: #334155; font-size: 0.9rem; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: 600; color: var(--text-muted); font-size: 0.9rem; }
         .form-group input, .form-group select, .form-group textarea {
-            width: 100%; padding: 10px; border: 1px solid #CBD5E1; border-radius: 6px; font-size: 0.95rem;
+            width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.95rem;
+            background: var(--input-bg); color: white; color-scheme: dark;
         }
     </style>
 </head>
@@ -169,10 +171,10 @@
         <div class="login-box">
             <img src="logo-perceptum.png" alt="Perceptum Logo" class="login-logo">
             <h2 style="color: var(--primary); margin: 0 0 5px 0;">PERCEPTUM</h2>
-            <p style="color: #64748B; font-size: 0.85rem; margin-bottom: 20px;">Centro de Salud Especializada</p>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 20px;">Centro de Salud Especializada</p>
             <input type="password" id="access-code" placeholder="Ingrese su contraseña">
             <button onclick="checkAccess()"><i class="fas fa-key"></i> Entrar a Agenda</button>
-            <p id="login-error" style="color: red; font-size: 0.85rem; margin-top: 10px; display: none;">Contraseña incorrecta</p>
+            <p id="login-error" style="color: var(--danger); font-size: 0.85rem; margin-top: 10px; display: none;">Contraseña incorrecta</p>
         </div>
     </div>
 
@@ -196,7 +198,7 @@
 
                 <button class="btn-new" onclick="openAppointmentModal()"><i class="fas fa-plus-circle"></i> Nueva Cita</button>
             </div>
-            <div style="font-size: 0.75rem; color: #94A3B8; text-align: center;">
+            <div style="font-size: 0.75rem; color: var(--text-muted); text-align: center;">
                 <p>Agenda Médica Perceptum v2.0<br>Oftalmología & Fonoaudiología</p>
             </div>
         </aside>
@@ -205,7 +207,7 @@
             <div class="header">
                 <div class="header-title-container">
                     <button class="menu-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
-                    <h1 id="agenda-title"><i class="fas fa-calendar-alt" style="color: var(--secondary);"></i> Agenda - Manu</h1>
+                    <h1 id="agenda-title"><i class="fas fa-calendar-alt" style="color: var(--primary);"></i> Agenda - Manu</h1>
                 </div>
                 <div class="header-controls">
                     <input type="date" id="week-selector" class="week-picker-btn" onchange="renderWeeklyGrid()">
@@ -297,7 +299,7 @@
     </div>
 
     <script>
-        // CONFIGURACIÓN REAL DE TU PROYECTO EN FIREBASE
+        // CONFIGURACIÓN REAL DE FIREBASE
         const firebaseConfig = {
             apiKey: "AIzaSyCSRp9itPy2cj55HvyuH6A8KXGypW1rbUY",
             authDomain: "agenda-perceptum.firebaseapp.com",
@@ -327,11 +329,13 @@
         document.getElementById('week-selector').value = formatDate(new Date());
         populateTimeSelect();
 
-        // Escuchar cambios en la nube en tiempo real (Sincronización PC <-> Celular)
+        // Escuchar cambios en la nube en tiempo real
         db.ref('appointments').on('value', (snapshot) => {
             const data = snapshot.val();
             appointmentsList = data ? Object.values(data) : [];
             renderWeeklyGrid();
+        }, (error) => {
+            console.error("Error leyendo Firebase: ", error);
         });
 
         function toggleSidebar() {
@@ -357,7 +361,7 @@
             document.getElementById('btn-manu').classList.toggle('active', prof === 'Manu');
             document.getElementById('btn-ina').classList.toggle('active', prof === 'Ina');
             document.getElementById('app-professional').value = prof;
-            document.getElementById('agenda-title').innerHTML = `<i class="fas fa-calendar-alt" style="color: var(--secondary);"></i> Agenda - ${prof}`;
+            document.getElementById('agenda-title').innerHTML = `<i class="fas fa-calendar-alt" style="color: var(--primary);"></i> Agenda - ${prof}`;
             
             toggleSidebar();
             renderWeeklyGrid();
@@ -441,13 +445,15 @@
                 }
             }
 
-            // Guardar en la nube (Firebase)
+            // Guardar en Firebase
             db.ref('appointments/' + appUniqueId).set(newApp)
                 .then(() => {
                     closeModal();
                     document.getElementById('appointment-form').reset();
                 })
-                .catch(err => alert("Error guardando en la nube: " + err.message));
+                .catch(err => {
+                    alert("Error de permisos en Firebase. Recuerda actualizar las Reglas a .read: true y .write: true. Detalle: " + err.message);
+                });
         }
 
         function deleteAppointment(id) {
