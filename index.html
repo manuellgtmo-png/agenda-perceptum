@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Agenda Médica Privada | Perceptum</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
     <style>
         :root {
             --primary: #005f73;
@@ -46,18 +51,22 @@
         /* App Container */
         .app-container { display: flex; height: 100vh; position: relative; }
 
-        /* Sidebar Overlay para móvil */
         .sidebar-overlay {
             display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
             background: rgba(0,0,0,0.5); z-index: 998;
         }
 
-        /* Sidebar */
+        /* Sidebar deslizable siempre (PC y Móvil) */
         .sidebar {
-            width: 280px; background: var(--dark); color: white; padding: 25px 20px;
-            display: flex; flex-direction: column; justify-content: space-between; flex-shrink: 0;
+            position: fixed; top: 0; left: 0; height: 100vh; width: 280px;
+            background: var(--dark); color: white; padding: 25px 20px;
+            display: flex; flex-direction: column; justify-content: space-between;
             transition: transform 0.3s ease; z-index: 999;
+            transform: translateX(-100%);
         }
+        .sidebar.active { transform: translateX(0); }
+        .sidebar-overlay.active { display: block; }
+
         .brand-container { text-align: center; margin-bottom: 25px; }
 
         .profile-selector {
@@ -86,8 +95,10 @@
             display: flex; justify-content: space-between; align-items: center; gap: 10px;
         }
         .header-title-container { display: flex; align-items: center; gap: 12px; }
+        
+        /* Botón Hamburguesa visible universalmente en PC y Móvil */
         .menu-toggle {
-            display: none; background: #F1F5F9; border: 1px solid var(--border);
+            display: block; background: #F1F5F9; border: 1px solid var(--border);
             padding: 8px 12px; border-radius: 8px; font-size: 1.2rem; color: var(--dark); cursor: pointer;
         }
         .header h1 { margin: 0; color: var(--dark); font-size: 1.2rem; display: flex; align-items: center; gap: 8px; }
@@ -131,10 +142,7 @@
         .btn-mini { border: none; background: rgba(255,255,255,0.8); padding: 2px 6px; border-radius: 4px; cursor: pointer; font-size: 0.7rem; color: #334155; text-decoration: none; }
         .btn-mini:hover { background: white; color: var(--primary); }
 
-        /* Badges de Estado */
-        .status-badge {
-            font-size: 0.62rem; font-weight: bold; padding: 2px 6px; border-radius: 4px; text-transform: uppercase;
-        }
+        .status-badge { font-size: 0.62rem; font-weight: bold; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; }
         .status-Pendiente { background: #FEF3C7; color: #D97706; }
         .status-Confirmado { background: #D1FAE5; color: #059669; }
         .status-Reagendado { background: #E0E7FF; color: #4F46E5; }
@@ -151,18 +159,6 @@
         .form-group label { display: block; margin-bottom: 5px; font-weight: 600; color: #334155; font-size: 0.9rem; }
         .form-group input, .form-group select, .form-group textarea {
             width: 100%; padding: 10px; border: 1px solid #CBD5E1; border-radius: 6px; font-size: 0.95rem;
-        }
-
-        /* Estilos Adaptables para Móvil */
-        @media (max-width: 768px) {
-            .menu-toggle { display: block; }
-            .sidebar {
-                position: fixed; top: 0; left: 0; height: 100vh;
-                transform: translateX(-100%);
-            }
-            .sidebar.active { transform: translateX(0); }
-            .sidebar-overlay.active { display: block; }
-            .header h1 { font-size: 1rem; }
         }
     </style>
 </head>
@@ -190,7 +186,6 @@
                     <img src="logo-perceptum.png" alt="Perceptum Logo" class="brand-logo">
                 </div>
 
-                <!-- Perfiles -->
                 <div class="profile-selector">
                     <label><i class="fas fa-user-md"></i> Profesional Activo:</label>
                     <div class="profile-buttons">
@@ -302,8 +297,24 @@
     </div>
 
     <script>
+        // CONFIGURACIÓN REAL DE TU PROYECTO EN FIREBASE
+        const firebaseConfig = {
+            apiKey: "AIzaSyCSRp9itPy2cj55HvyuH6A8KXGypW1rbUY",
+            authDomain: "agenda-perceptum.firebaseapp.com",
+            databaseURL: "https://agenda-perceptum-default-rtdb.firebaseio.com",
+            projectId: "agenda-perceptum",
+            storageBucket: "agenda-perceptum.firebasestorage.app",
+            messagingSenderId: "918720520188",
+            appId: "1:918720520188:web:0933a7afcf8623fdd79c79",
+            measurementId: "G-F0W2GBSMLW"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
         const DEFAULT_PASS = "Perceptum2026";
         let currentProfile = "Manu";
+        let appointmentsList = [];
         
         const timeSlots = [];
         let h = 9, m = 0;
@@ -315,6 +326,13 @@
 
         document.getElementById('week-selector').value = formatDate(new Date());
         populateTimeSelect();
+
+        // Escuchar cambios en la nube en tiempo real (Sincronización PC <-> Celular)
+        db.ref('appointments').on('value', (snapshot) => {
+            const data = snapshot.val();
+            appointmentsList = data ? Object.values(data) : [];
+            renderWeeklyGrid();
+        });
 
         function toggleSidebar() {
             document.getElementById('sidebar').classList.toggle('active');
@@ -341,9 +359,7 @@
             document.getElementById('app-professional').value = prof;
             document.getElementById('agenda-title').innerHTML = `<i class="fas fa-calendar-alt" style="color: var(--secondary);"></i> Agenda - ${prof}`;
             
-            if (window.innerWidth <= 768) {
-                toggleSidebar();
-            }
+            toggleSidebar();
             renderWeeklyGrid();
         }
 
@@ -355,15 +371,14 @@
             document.getElementById('app-date').value = document.getElementById('week-selector').value;
             document.getElementById('app-status').value = 'Pendiente';
             
-            if (window.innerWidth <= 768 && document.getElementById('sidebar').classList.contains('active')) {
+            if (document.getElementById('sidebar').classList.contains('active')) {
                 toggleSidebar();
             }
             document.getElementById('appointment-modal').style.display = 'flex';
         }
 
         function editAppointment(id) {
-            const appointments = getAppointments();
-            const app = appointments.find(a => a.id === id);
+            const app = appointmentsList.find(a => a.id === id);
             if (!app) return;
 
             document.getElementById('editing-id').value = app.id;
@@ -385,16 +400,13 @@
             document.getElementById('appointment-modal').style.display = 'none';
         }
 
-        function getAppointments() {
-            return JSON.parse(localStorage.getItem('perceptum_appointments')) || [];
-        }
-
         function saveAppointment(e) {
             e.preventDefault();
             const editingId = document.getElementById('editing-id').value;
-            
+            const appUniqueId = editingId ? Number(editingId) : Date.now();
+
             const newApp = {
-                id: editingId ? Number(editingId) : Date.now(),
+                id: appUniqueId,
                 professional: document.getElementById('app-professional').value,
                 name: document.getElementById('patient-name').value,
                 phone: document.getElementById('patient-phone').value,
@@ -406,7 +418,6 @@
                 notes: document.getElementById('observations').value
             };
 
-            let appointments = getAppointments();
             const slotsNecesarios = newApp.duration / 20;
             const idxInicio = timeSlots.indexOf(newApp.time);
             
@@ -417,7 +428,7 @@
 
             for (let i = 0; i < slotsNecesarios; i++) {
                 const currentSlot = timeSlots[idxInicio + i];
-                const existeOcupacion = appointments.some(a => {
+                const existeOcupacion = appointmentsList.some(a => {
                     if (a.id === newApp.id || a.professional !== newApp.professional || a.date !== newApp.date) return false;
                     const aIdx = timeSlots.indexOf(a.time);
                     const aSlots = a.duration / 20;
@@ -430,24 +441,18 @@
                 }
             }
 
-            if (editingId) {
-                appointments = appointments.map(a => a.id === Number(editingId) ? newApp : a);
-            } else {
-                appointments.push(newApp);
-            }
-
-            localStorage.setItem('perceptum_appointments', JSON.stringify(appointments));
-
-            closeModal();
-            document.getElementById('appointment-form').reset();
-            renderWeeklyGrid();
+            // Guardar en la nube (Firebase)
+            db.ref('appointments/' + appUniqueId).set(newApp)
+                .then(() => {
+                    closeModal();
+                    document.getElementById('appointment-form').reset();
+                })
+                .catch(err => alert("Error guardando en la nube: " + err.message));
         }
 
         function deleteAppointment(id) {
             if(confirm("¿Seguro que deseas eliminar esta cita?")) {
-                let apps = getAppointments().filter(a => a.id !== id);
-                localStorage.setItem('perceptum_appointments', JSON.stringify(apps));
-                renderWeeklyGrid();
+                db.ref('appointments/' + id).remove();
             }
         }
 
@@ -463,9 +468,7 @@
             d = parseLocalDate(d);
             let day = d.getDay();
             let diff = d.getDate() - day + (day === 0 ? -6 : 1); 
-            
-            const monday = new Date(d.getFullYear(), d.getMonth(), diff);
-            return monday;
+            return new Date(d.getFullYear(), d.getMonth(), diff);
         }
 
         function formatDate(d) {
@@ -492,7 +495,7 @@
                 });
             }
 
-            const appointments = getAppointments().filter(a => a.professional === currentProfile);
+            const filteredApps = appointmentsList.filter(a => a.professional === currentProfile);
 
             let html = `<div class="grid-header time-col"><i class="far fa-clock"></i></div>`;
             weekDays.forEach(wd => { html += `<div class="grid-header">${wd.label}</div>`; });
@@ -505,11 +508,9 @@
                 weekDays.forEach(wd => {
                     const key = `${wd.dateStr}_${slot}`;
                     
-                    if (occupied[key]) {
-                        return;
-                    }
+                    if (occupied[key]) return;
 
-                    const app = appointments.find(a => a.date === wd.dateStr && a.time === slot);
+                    const app = filteredApps.find(a => a.date === wd.dateStr && a.time === slot);
 
                     if (app) {
                         const slotsSpan = (app.duration || 20) / 20;
