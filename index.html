@@ -34,33 +34,47 @@
             box-shadow: 0 20px 40px rgba(0,0,0,0.6); width: 90%; max-width: 400px; border: 1px solid var(--border);
         }
         
-        /* Ajuste circular perfecto para el logo */
-        /* Ajuste preciso con zoom al centro del logo */
-.login-logo { 
-    width: 140px; 
-    height: 140px; 
-    margin: 0 auto 15px auto; 
-    object-fit: cover; 
-    object-position: center;
-    transform: scale(1.85); /* Hace zoom para eliminar el exceso de margen blanco */
-    border-radius: 50%; 
-    display: block;
-    border: 2px solid var(--primary);
-    overflow: hidden;
-}
+        /* Contenedor circular externo para el Logo */
+        .login-logo-container {
+            width: 130px;
+            height: 130px;
+            margin: 0 auto 15px auto;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 2px solid var(--primary);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #ffffff;
+        }
 
-.brand-logo { 
-    width: 100px; 
-    height: 100px; 
-    object-fit: cover; 
-    object-position: center;
-    transform: scale(1.85); /* Zoom para el menú lateral */
-    border-radius: 50%; 
-    border: 2px solid var(--primary);
-    margin: 15px auto;
-    display: block;
-    overflow: hidden;
-}
+        /* Imagen con zoom potente para quitar marco blanco */
+        .login-logo-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scale(2.7);
+        }
+
+        .brand-logo-container {
+            width: 90px;
+            height: 90px;
+            margin: 10px auto;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 2px solid var(--primary);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #ffffff;
+        }
+
+        .brand-logo-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scale(2.7);
+        }
 
         .login-box input {
             width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid var(--border);
@@ -195,7 +209,9 @@
     <!-- Login -->
     <div id="login-overlay">
         <div class="login-box">
-            <img src="logo-perceptum.png.jpg" alt="Perceptum Logo" class="login-logo">
+            <div class="login-logo-container">
+                <img src="logo-perceptum.png.jpg" alt="Perceptum Logo">
+            </div>
             <h2 style="color: var(--primary); margin: 0 0 5px 0;">PERCEPTUM</h2>
             <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 20px;">Centro de Salud Especializada</p>
             <input type="password" id="access-code" placeholder="Ingrese su contraseña">
@@ -211,7 +227,9 @@
         <aside class="sidebar" id="sidebar">
             <div>
                 <div class="brand-container">
-                    <img src="logo-perceptum.png.jpg" alt="Perceptum Logo" class="brand-logo">
+                    <div class="brand-logo-container">
+                        <img src="logo-perceptum.png.jpg" alt="Perceptum Logo">
+                    </div>
                 </div>
 
                 <div class="profile-selector">
@@ -354,9 +372,7 @@
         document.getElementById('week-selector').value = formatDate(new Date());
         populateTimeSelect();
         
-        // Cargar citas desde la nube al iniciar
         loadCloudData();
-        // Sincronizar automáticamente cada 20 segundos
         setInterval(loadCloudData, 20000);
 
         async function loadCloudData() {
